@@ -1,0 +1,21 @@
+{
+  "sections": {
+    "hero": true,
+    "brideGroom": true,
+    "venue": true,
+    "countdown": true,
+    "timeline": true,
+    "livestream": true,
+    "gallery": true,
+    "presence": true
+  },
+  "metadata": {
+    "title": "Mahesh & Namratha's Wedding",
+    "coupleNames": "Mahesh & Namratha",
+    "weddingDate": "April 30th, 2026"
+  },
+  "remoteUris": {
+    "en": null,
+    "te": null
+  }
+}
