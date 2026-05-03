@@ -139,8 +139,7 @@ jobs:
               .Origins.Items |= map(if (.DomainName | startswith($PREFIX)) then 
                 .OriginAccessControlId = $OAC_ID | 
                 .S3OriginConfig = { "OriginAccessIdentity": "" } | 
-                del(.CustomOriginConfig) | 
-                del(.CustomHeaders) 
+                del(.CustomOriginConfig)
               else . end) |
               .Aliases = {
                 "Quantity": (((.Aliases.Items // []) + [$ALIAS]) | unique | length),
