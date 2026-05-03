@@ -136,7 +136,12 @@ jobs:
           if [ "$NEEDS_UPDATE" == "true" ]; then
             echo "Attaching OAC and updating aliases to distribution..."
             jq --arg OAC_ID "$OAC_ID" --arg PREFIX "$S3_BUCKET.s3." --arg ALIAS "$ALIAS_DOMAIN" --arg CERT_ARN "${{ secrets.ACM_CERTIFICATE_ARN }}" '
-              .Origins.Items |= map(if (.DomainName | startswith($PREFIX)) then .OriginAccessControlId = $OAC_ID else . end) |
+              .Origins.Items |= map(if (.DomainName | startswith($PREFIX)) then 
+                .OriginAccessControlId = $OAC_ID | 
+                .S3OriginConfig = { "OriginAccessIdentity": "" } | 
+                del(.CustomOriginConfig) | 
+                del(.CustomHeaders) 
+              else . end) |
               .Aliases = {
                 "Quantity": (((.Aliases.Items // []) + [$ALIAS]) | unique | length),
                 "Items": (((.Aliases.Items // []) + [$ALIAS]) | unique)
