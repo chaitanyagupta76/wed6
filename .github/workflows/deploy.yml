@@ -206,3 +206,50 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id $DIST_ID \
             --paths "/*"
+
+      # -------------------------
+      # Update Route 53
+      # -------------------------
+      - name: Update Route 53 Record
+        run: |
+          ALIAS_DOMAIN="${PROJECT_NAME}.eventmacha.com"
+          echo "Updating Route 53 for $ALIAS_DOMAIN..."
+          
+          HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --dns-name eventmacha.com. --max-items 1 --output json | jq -r '.HostedZones[0].Id' | sed 's#/hostedzone/##')
+          
+          if [ -z "$HOSTED_ZONE_ID" ] || [ "$HOSTED_ZONE_ID" == "null" ]; then
+            echo "Failed to find Hosted Zone ID for eventmacha.com"
+            exit 1
+          fi
+
+          CLOUDFRONT_DOMAIN=$(aws cloudfront get-distribution --id $DIST_ID --query 'Distribution.DomainName' --output text)
+          
+          if [ -z "$CLOUDFRONT_DOMAIN" ] || [ "$CLOUDFRONT_DOMAIN" == "null" ]; then
+            echo "Failed to get CloudFront domain name for distribution $DIST_ID"
+            exit 1
+          fi
+          
+          cat <<EOF > route53-change.json
+          {
+            "Comment": "Update CNAME alias for $ALIAS_DOMAIN to point to $CLOUDFRONT_DOMAIN",
+            "Changes": [
+              {
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                  "Name": "$ALIAS_DOMAIN",
+                  "Type": "CNAME",
+                  "TTL": 300,
+                  "ResourceRecords": [
+                    {
+                      "Value": "$CLOUDFRONT_DOMAIN"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+          EOF
+          
+          aws route53 change-resource-record-sets \
+            --hosted-zone-id $HOSTED_ZONE_ID \
+            --change-batch file://route53-change.json
